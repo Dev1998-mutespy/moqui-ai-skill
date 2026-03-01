@@ -49,7 +49,9 @@ moqui/                          # Root (executable WAR)
 │   │   │   ├── screen/         # Screen XML hierarchy
 │   │   │   └── template/       # FTL templates
 │   │   └── YourComponent/      # Custom component
-│   │       ├── entity/         # Entity definitions (.xml, .eecas.xml)
+│   │       ├── entity/         # Entity definitions: {Domain}Entities.xml,
+│   │       │                   #   {Domain}ExtendedEntities.xml, {Domain}ViewEntities.xml,
+│   │       │                   #   {Domain}Entities.eecas.xml (all flat, no subfolders)
 │   │       ├── service/        # Service definitions (.xml, .secas.xml)
 │   │       ├── screen/         # Screen hierarchy
 │   │       ├── data/           # Data load files
@@ -74,6 +76,23 @@ All files in these directories are auto-discovered:
 
 > **Important**: Entity files go directly in `entity/` with NO package subfolders. The entity package is defined via the XML `package` attribute, not the directory structure. Service files DO use subdirectories that map to the Java package name (e.g., `service/mycomp/myapp/MyServices.xml` → service name `mycomp.myapp.MyServices.verb#Noun`).
 
+#### Entity File Naming Convention
+
+Organize entity files by **type and domain** — one file per domain per type:
+
+| File Type | Naming Pattern | Example |
+|-----------|---------------|---------|
+| New entities | `{Domain}Entities.xml` | `StudentEntities.xml`, `ProjectEntities.xml` |
+| Extended entities | `{Domain}ExtendedEntities.xml` | `OrderExtendedEntities.xml`, `PartyExtendedEntities.xml` |
+| View entities | `{Domain}ViewEntities.xml` | `OrderViewEntities.xml`, `StudentViewEntities.xml` |
+| Entity ECA rules | `{Domain}Entities.eecas.xml` | `OrderEntities.eecas.xml` |
+
+**Key rules:**
+- **Group related extend-entity definitions in a single file** — e.g., ALL order-related `extend-entity` definitions go in `OrderExtendedEntities.xml`
+- **Group related view-entity definitions in a single file** — e.g., ALL order-related `view-entity` definitions go in `OrderViewEntities.xml`
+- **Keep extend-entity and view-entity separate from new entity definitions** — Do NOT mix them in the same file (exception: small components with 1-2 tightly coupled view entities for their own custom entities)
+- See `references/ENTITIES.md` → [File Naming Conventions](references/ENTITIES.md#file-naming-conventions) for full details and examples
+
 ### Execution Context (ec)
 
 The central API object, available in all XML Actions and Groovy scripts:
@@ -91,6 +110,67 @@ ec.screen      // ScreenFacade - screen rendering
 ec.l10n        // L10nFacade - localization, formatting
 ec.web         // WebFacade - servlet request/response (web context only)
 ```
+
+---
+
+## XSD Schema Compliance
+
+**All Moqui XML files MUST conform to the relevant XSD schema** in `framework/xsd/`. Using invalid elements, misspelled attributes, or wrong nesting will cause runtime errors. Always check the correct XSD for the artifact type you are writing.
+
+### XSD-to-Artifact Mapping
+
+| XSD File | Root Element(s) | Used By | Component File Pattern |
+|----------|----------------|---------|----------------------|
+| `entity-definition-3.xsd` | `entities`, `entity`, `extend-entity`, `view-entity` | Entity definitions | `entity/*.xml` |
+| `entity-eca-3.xsd` | `eecas`, `eeca` | Entity Event Condition Actions | `entity/*.eecas.xml` |
+| `service-definition-3.xsd` | `services`, `service` | Service definitions | `service/**/*.xml` |
+| `service-eca-3.xsd` | `secas`, `seca` | Service Event Condition Actions | `service/**/*.secas.xml` |
+| `rest-api-3.xsd` | `resource`, `id`, `method` | REST API resource definitions | `service/*.rest.xml` *(directly in service/, NOT in subdirectories)* |
+| `xml-screen-3.xsd` | `screen`, `screen-extend` | Screen definitions | `screen/**/*.xml` |
+| `xml-form-3.xsd` | `form-single`, `form-list` | Form widgets (embedded in screens) | `screen/**/*.xml` |
+| `xml-actions-3.xsd` | `actions`, `condition` | Action blocks (embedded in services, screens, ECAs) | Embedded within other artifacts |
+| `moqui-conf-3.xsd` | `moqui-conf` | Framework/component configuration | `MoquiConf.xml`, `runtime/conf/*.xml` |
+| `email-eca-3.xsd` | `emecas`, `emeca` | Email Event Condition Actions | `entity/*.emecas.xml` |
+| `common-types-3.xsd` | *(type definitions only)* | Shared types used by all other XSDs | *(Not directly referenced)* |
+
+### Key Rules
+
+1. **Always set `xsi:noNamespaceSchemaLocation`** on root elements to reference the correct XSD:
+   ```xml
+   <!-- Entity files -->
+   <entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
+
+   <!-- Service files -->
+   <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+
+   <!-- Screen files -->
+   <screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd">
+
+   <!-- REST API files -->
+   <resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/rest-api-3.xsd">
+
+   <!-- EECA files -->
+   <eecas xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/eeca-definition-3.xsd">
+
+   <!-- SECA files -->
+   <secas xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-eca-definition-3.xsd">
+
+   <!-- MoquiConf files -->
+   <moqui-conf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/moqui-conf-3.xsd">
+   ```
+
+2. **Use only valid elements defined in the XSD** — Never invent element names. For XML Actions (`xml-actions-3.xsd`), all entity operation elements are prefixed with `entity-` (e.g., `entity-make-value`, `entity-find-one`, `entity-sequenced-id-primary`). Never use shortened names like `make-value` — they will cause template errors at runtime. See `references/SERVICES.md` for the complete valid action element list.
+
+3. **Validate element nesting** — Each XSD defines what child elements are allowed. For example, `<econdition>` goes inside `<entity-find>`, not outside it. `<field>` goes inside `<entity>`, not at the `<entities>` root level.
+
+4. **Check attribute names and types** — Use exact attribute names from the XSD (e.g., `entity-name` not `entityName`, `field-name` not `fieldName`, `join-from-alias` not `joinFromAlias`). Moqui XML uses kebab-case for attributes.
 
 ---
 
@@ -124,13 +204,19 @@ ec.web         // WebFacade - servlet request/response (web context only)
         </seed-data>
     </entity>
 
-    <!-- Extend existing entity (add fields/relationships) -->
+    <!-- NOTE: extend-entity and view-entity go in SEPARATE files (see below) -->
+</entities>
+
+<!-- File: entity/OrderExtendedEntities.xml — ALL order-related extend-entity in one file -->
+<entities ...>
     <extend-entity entity-name="OrderHeader" package="mantle.order">
         <field name="myCustomField" type="text-medium"/>
         <relationship type="one" related="mycomp.myapp.MyEntity"/>
     </extend-entity>
+</entities>
 
-    <!-- View entity (join/aggregate) -->
+<!-- File: entity/OrderViewEntities.xml — ALL order-related view-entity in one file -->
+<entities ...>
     <view-entity entity-name="OrderItemDetail" package="mycomp.myapp">
         <member-entity entity-alias="OI" entity-name="mantle.order.OrderItem"/>
         <member-entity entity-alias="OH" entity-name="mantle.order.OrderHeader" join-from-alias="OI">
@@ -277,6 +363,8 @@ Moqui auto-generates CRUD services for any entity:
 
 ### XML Actions Reference
 
+> **IMPORTANT**: All XML must conform to the relevant Moqui XSD schema. See [XSD Schema Compliance](#xsd-schema-compliance) below for the full mapping.
+
 ```xml
 <actions>
     <!-- Variables -->
@@ -355,23 +443,26 @@ Moqui auto-generates CRUD services for any entity:
 
 ### REST API
 
-Services are auto-exposed via REST if configured. The standard pattern:
+REST APIs are defined via `*.rest.xml` resource files that map HTTP methods to services.
 
-```xml
-<!-- In service definition, add authenticate and method attributes -->
-<service verb="get" noun="ProductInfo" authenticate="anonymous-view" method="get">
-    ...
-</service>
+**CRITICAL**: The `.rest.xml` file **must be placed directly in the `service/` directory** — NOT in a subdirectory. The framework only scans direct children of `service/` for `*.rest.xml` files.
+
+```
+✅ Correct:  service/mycomp.rest.xml
+❌ Wrong:    service/mycomp/mycomp.rest.xml    ← will NOT be discovered
 ```
 
-REST endpoints follow: `POST /rest/s1/mycomp/myapp/MyServices/getProductInfo`
+REST endpoints follow: `{method} /rest/s1/{resource-name}/{sub-resources}`
 
-For the store API pattern (popstore/PopRestStore):
+Example:
 ```
-GET    /rest/s1/store/products/{productId}
-POST   /rest/s1/store/cart/add
-PUT    /rest/s1/store/cart/updateItem
+GET    /rest/s1/mycomp/orders              → find#Orders
+POST   /rest/s1/mycomp/orders              → create#Order
+GET    /rest/s1/mycomp/orders/{orderId}    → get#Order
+PATCH  /rest/s1/mycomp/orders/{orderId}    → update#Order
 ```
+
+See `references/SERVICES.md` → REST API Configuration for full details.
 
 ---
 
@@ -705,14 +796,46 @@ Create `component.xml`:
 
 ### 2. Extending Mantle Entities
 
+Create a **dedicated file per domain** for extended entities (e.g., `OrderExtendedEntities.xml`). Group ALL related `extend-entity` definitions together:
+
 ```xml
-<!-- Add custom field to OrderHeader -->
-<extend-entity entity-name="OrderHeader" package="mantle.order">
-    <field name="myCustomField" type="text-medium"/>
-    <field name="myEnumId" type="id"/>
-    <relationship type="one" title="MyCustomType" related="moqui.basic.Enumeration">
-        <key-map field-name="myEnumId"/></relationship>
-</extend-entity>
+<!-- File: entity/OrderExtendedEntities.xml -->
+<!-- Contains ALL order-related extend-entity definitions in one file -->
+<entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
+
+    <extend-entity entity-name="OrderHeader" package="mantle.order">
+        <field name="myCustomField" type="text-medium"/>
+        <field name="myEnumId" type="id"/>
+        <relationship type="one" title="MyCustomType" related="moqui.basic.Enumeration">
+            <key-map field-name="myEnumId"/></relationship>
+    </extend-entity>
+
+    <extend-entity entity-name="OrderItem" package="mantle.order">
+        <field name="taskId" type="id"/>
+        <relationship type="one" related="mycomp.project.ProjectTask">
+            <key-map field-name="taskId"/></relationship>
+    </extend-entity>
+</entities>
+```
+
+Similarly, create **view-entity files per domain** (e.g., `OrderViewEntities.xml`):
+
+```xml
+<!-- File: entity/OrderViewEntities.xml -->
+<!-- Contains ALL order-related view-entity definitions in one file -->
+<entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
+
+    <view-entity entity-name="OrderItemDetail" package="mycomp.order">
+        <member-entity entity-alias="OI" entity-name="mantle.order.OrderItem"/>
+        <member-entity entity-alias="OH" entity-name="mantle.order.OrderHeader" join-from-alias="OI">
+            <key-map field-name="orderId"/></member-entity>
+        <alias entity-alias="OI" name="orderId"/>
+        <alias entity-alias="OI" name="orderItemSeqId"/>
+        <alias entity-alias="OH" name="placedDate"/>
+    </view-entity>
+</entities>
 ```
 
 ### 3. Overriding/Extending Mantle Services (SECA)
@@ -851,19 +974,22 @@ MarbleERP is the flagship Moqui ERP application, combining goods and services ma
 
 ## Critical Rules & Best Practices
 
-1. **Never modify framework or Mantle source** — Use extend-entity, SECA/EECA, and custom components
-2. **Use service-call for all business logic** — Don't put logic directly in screens
-3. **Follow Mantle naming conventions** — verb#Noun for services, package.Entity for entities
-4. **Status changes should go through services** — Never directly update statusId fields
-5. **Use entity relationships** — Define relationships for proper FK management and navigation
-6. **Seed data for types/statuses** — Use `<seed-data>` in entity files or data/ directory
-7. **Transaction boundaries** — Services have automatic transaction handling; use `transaction="force-new"` sparingly
-8. **Use `in-map="context"`** — Pass context automatically to sub-services instead of building maps manually
-9. **Use `auto-parameters`** — Let service definitions auto-discover parameters from entity definitions
-10. **Prefer entity-find with search-form-inputs** — For list screens, this auto-wires filter forms to queries
-11. **Use `store#Entity`** — Instead of separate create/update logic, `store#` creates if PK missing, updates if exists
-12. **Cache wisely** — Set `cache="true"` on entity-find-one for configuration/type entities, not transactional data
-13. **Entity files are flat** — Place all entity XML files directly in `entity/` with NO package subfolders; the package is defined via the XML `package` attribute
-14. **Service files use subdirectories** — Service XML files go in subdirectories that map to the package name (e.g., `service/mycomp/myapp/MyServices.xml`)
-15. **Always create artifact authorization for new apps** — Any app mounted on the home screen needs `ArtifactGroup` + `ArtifactAuthz` seed data or it will be invisible
-16. **Root app screens must have no required parameters** — The home screen checks `isPermitted()` and skips screens with required parameters
+1. **Follow the XSD schemas** — All Moqui XML MUST conform to the relevant XSD in `framework/xsd/`. Use only valid elements, attributes, and nesting defined in the schema. See [XSD Schema Compliance](#xsd-schema-compliance) for the full mapping.
+2. **Never modify framework or Mantle source** — Use extend-entity, SECA/EECA, and custom components
+3. **Use service-call for all business logic** — Don't put logic directly in screens
+4. **Follow Mantle naming conventions** — verb#Noun for services, package.Entity for entities
+5. **Status changes should go through services** — Never directly update statusId fields
+6. **Use entity relationships** — Define relationships for proper FK management and navigation
+7. **Seed data for types/statuses** — Use `<seed-data>` in entity files or data/ directory
+8. **Transaction boundaries** — Services have automatic transaction handling; use `transaction="force-new"` sparingly
+9. **Use `in-map="context"`** — Pass context automatically to sub-services instead of building maps manually
+10. **Use `auto-parameters`** — Let service definitions auto-discover parameters from entity definitions
+11. **Prefer entity-find with search-form-inputs** — For list screens, this auto-wires filter forms to queries
+12. **Use `store#Entity`** — Instead of separate create/update logic, `store#` creates if PK missing, updates if exists
+13. **Cache wisely** — Set `cache="true"` on entity-find-one for configuration/type entities, not transactional data
+14. **Entity files are flat** — Place all entity XML files directly in `entity/` with NO package subfolders; the package is defined via the XML `package` attribute
+15. **Service files use subdirectories** — Service XML files go in subdirectories that map to the package name (e.g., `service/mycomp/myapp/MyServices.xml`)
+16. **Separate files for extend-entity** — Put ALL related extended entities in a single domain-specific file (e.g., `OrderExtendedEntities.xml` for order-related extensions, `PartyExtendedEntities.xml` for party-related extensions). Do NOT mix `extend-entity` with new `entity` definitions.
+17. **Separate files for view-entity** — Put ALL related view entities in a single domain-specific file (e.g., `OrderViewEntities.xml`, `StudentViewEntities.xml`). Do NOT mix `view-entity` with base `entity` definitions (exception: small components with 1-2 tightly coupled view entities for their own custom entities).
+18. **Always create artifact authorization for new apps** — Any app mounted on the home screen needs `ArtifactGroup` + `ArtifactAuthz` seed data or it will be invisible
+19. **Root app screens must have no required parameters** — The home screen checks `isPermitted()` and skips screens with required parameters

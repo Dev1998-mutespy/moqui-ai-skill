@@ -1,5 +1,7 @@
 # Moqui Screen & Form Development Reference
 
+> **Schema**: Screen XML must conform to `framework/xsd/xml-screen-3.xsd`. Form definitions within screens must conform to `framework/xsd/xml-form-3.xsd`. XML Actions blocks must conform to `framework/xsd/xml-actions-3.xsd`.
+
 ## Table of Contents
 1. [Screen Structure](#screen-structure)
 2. [Screen Hierarchy & Routing](#screen-hierarchy--routing)

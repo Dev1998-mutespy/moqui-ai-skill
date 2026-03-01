@@ -1,5 +1,7 @@
 # Moqui Entity Development Reference
 
+> **Schema**: Entity XML must conform to `framework/xsd/entity-definition-3.xsd`. Entity ECA rules must conform to `framework/xsd/entity-eca-3.xsd`. XML Actions embedded within ECA rules must conform to `framework/xsd/xml-actions-3.xsd`.
+
 ## Table of Contents
 1. [Entity File Placement](#entity-file-placement)
 2. [Entity Definition Elements](#entity-definition-elements)
@@ -25,9 +27,12 @@ Entity XML files go **directly in the `entity/` directory** of your component �
 ✅ CORRECT — Flat structure (follows mantle-udm convention):
 YourComponent/
 └── entity/
-    ├── YourEntities.xml          # package="mycomp.myapp" defined in XML
-    ├── ExtendEntities.xml        # extend-entity definitions
-    └── YourEntities.eecas.xml    # Entity ECA rules
+    ├── StudentEntities.xml              # New entities: package="studentmgmt" defined in XML
+    ├── OrderExtendedEntities.xml        # All order-related extend-entity definitions
+    ├── PartyExtendedEntities.xml        # All party-related extend-entity definitions
+    ├── OrderViewEntities.xml            # All order-related view-entity definitions
+    ├── StudentViewEntities.xml          # All student-related view-entity definitions
+    └── StudentEntities.eecas.xml        # Entity ECA rules
 
 ❌ WRONG — Do NOT create package subfolders:
 YourComponent/
@@ -40,10 +45,10 @@ YourComponent/
 The entity **package** is defined as an XML attribute on the `<entity>` or `<extend-entity>` element, NOT by the directory structure:
 
 ```xml
-<!-- File: entity/EmployeeEntities.xml -->
+<!-- File: entity/StudentEntities.xml -->
 <entities>
-    <entity entity-name="Employee" package="employee">  <!-- package defined HERE -->
-        <field name="employeeId" type="id" is-pk="true"/>
+    <entity entity-name="Student" package="studentmgmt">  <!-- package defined HERE -->
+        <field name="studentId" type="id" is-pk="true"/>
         ...
     </entity>
 </entities>
@@ -61,6 +66,80 @@ mantle-udm/entity/
 ├── ProductEntities.xml        # package="mantle.product"
 ├── ShipmentEntities.xml       # package="mantle.shipment"
 └── WorkEntities.xml           # package="mantle.work.effort"
+```
+
+### File Naming Conventions
+
+Organize entity files by **type and domain**. Each file should group related definitions together:
+
+| File Type | Naming Convention | Contents | Example |
+|-----------|-------------------|----------|---------|
+| New entities | `{Domain}Entities.xml` | All new entity definitions for a domain | `StudentEntities.xml`, `ProjectEntities.xml` |
+| Extended entities | `{Domain}ExtendedEntities.xml` | All `extend-entity` definitions for a domain | `OrderExtendedEntities.xml`, `PartyExtendedEntities.xml` |
+| View entities | `{Domain}ViewEntities.xml` | All `view-entity` definitions for a domain | `OrderViewEntities.xml`, `StudentViewEntities.xml` |
+| Entity ECA rules | `{Domain}Entities.eecas.xml` | ECA rules for a domain | `OrderEntities.eecas.xml` |
+
+**Rules:**
+- **One file per domain per type** — Put ALL order-related extended entities in a single `OrderExtendedEntities.xml`, not scattered across multiple files.
+- **Keep extend-entity definitions separate from new entity definitions** — Do NOT mix `extend-entity` and `entity` definitions in the same file. Extended entities modify existing Mantle/framework entities and should be clearly separated.
+- **Keep view-entity definitions separate from base entity definitions** — Create a dedicated `{Domain}ViewEntities.xml` file for view entities. This keeps join/aggregate logic separate from table definitions.
+- **Small components exception** — If your component has only 1-2 view entities or extend-entities closely tied to a single new entity, they MAY be placed in the same file as the new entity (e.g., a view-entity that only joins your own custom entities). Once you have 3+ or they span multiple domains, split them out.
+
+**Example — component with multiple domains:**
+```
+MyComponent/
+└── entity/
+    ├── ProjectEntities.xml               # New entities: Project, ProjectTask, ProjectMember
+    ├── ProjectViewEntities.xml           # View entities: ProjectTaskDetail, ProjectMemberSummary
+    ├── OrderExtendedEntities.xml         # extend-entity: OrderHeader + OrderItem (added custom fields)
+    ├── PartyExtendedEntities.xml         # extend-entity: Party + Person (added custom fields)
+    ├── OrderViewEntities.xml             # View entities: OrderItemWithProject, OrderProjectSummary
+    └── ProjectEntities.eecas.xml         # ECA rules for project entities
+```
+
+**Example — `OrderExtendedEntities.xml` (all order-related extensions in one file):**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
+
+    <extend-entity entity-name="OrderHeader" package="mantle.order">
+        <field name="projectId" type="id"/>
+        <field name="customChannel" type="text-short"/>
+        <relationship type="one" related="mycomp.project.Project">
+            <key-map field-name="projectId"/></relationship>
+    </extend-entity>
+
+    <extend-entity entity-name="OrderItem" package="mantle.order">
+        <field name="taskId" type="id"/>
+        <relationship type="one" related="mycomp.project.ProjectTask">
+            <key-map field-name="taskId"/></relationship>
+    </extend-entity>
+
+</entities>
+```
+
+**Example — `OrderViewEntities.xml` (all order-related view entities in one file):**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
+
+    <view-entity entity-name="OrderItemWithProject" package="mycomp.order">
+        <member-entity entity-alias="OI" entity-name="mantle.order.OrderItem"/>
+        <member-entity entity-alias="PRJ" entity-name="mycomp.project.Project"
+                join-from-alias="OI" join-optional="true">
+            <key-map field-name="projectId"/></member-entity>
+        <alias entity-alias="OI" name="orderId"/>
+        <alias entity-alias="OI" name="orderItemSeqId"/>
+        <alias entity-alias="PRJ" name="projectName"/>
+    </view-entity>
+
+    <view-entity entity-name="OrderProjectSummary" package="mycomp.order">
+        <!-- ... another order-related view entity ... -->
+    </view-entity>
+
+</entities>
 ```
 
 ### Service Files ARE Different
@@ -222,9 +301,12 @@ def customer = order.part?.customerParty  // Navigate through relationships
 
 ## View Entities
 
+> **File convention**: Put ALL related view entities in a single domain-specific file named `{Domain}ViewEntities.xml` (e.g., `OrderViewEntities.xml` for all order-related view entities). See [File Naming Conventions](#file-naming-conventions) above.
+
 ### Join Patterns
 
 ```xml
+<!-- File: entity/OrderViewEntities.xml -->
 <view-entity entity-name="OrderItemAndProduct" package="mycomp.myapp">
     <!-- Primary member entity -->
     <member-entity entity-alias="OI" entity-name="mantle.order.OrderItem"/>
@@ -278,26 +360,49 @@ Available for alias `function` attribute: `min`, `max`, `sum`, `avg`, `count`, `
 
 ## Extend Entity
 
-Add fields, relationships, or seed data to existing entities without modifying the original:
+Add fields, relationships, or seed data to existing entities without modifying the original.
+
+> **File convention**: Put ALL related extended entities in a single domain-specific file named `{Domain}ExtendedEntities.xml` (e.g., `OrderExtendedEntities.xml` for all order-related extensions). See [File Naming Conventions](#file-naming-conventions) above.
 
 ```xml
-<!-- Extend Mantle's OrderHeader -->
-<extend-entity entity-name="OrderHeader" package="mantle.order">
-    <field name="myCustomField" type="text-medium"/>
-    <field name="myTypeEnumId" type="id"/>
-    <relationship type="one" title="MyType" related="moqui.basic.Enumeration">
-        <key-map field-name="myTypeEnumId"/></relationship>
-    <index name="OH_MY_CUSTOM"><index-field name="myCustomField"/></index>
-    <seed-data>
-        <moqui.basic.EnumerationType enumTypeId="MyOrderType" description="My Order Type"/>
-        <moqui.basic.Enumeration enumId="MotStandard" enumTypeId="MyOrderType" description="Standard"/>
-    </seed-data>
-</extend-entity>
+<!-- File: entity/OrderExtendedEntities.xml -->
+<!-- All order-related extend-entity definitions in one file -->
+<entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
 
-<!-- Extend framework's UserAccount -->
-<extend-entity entity-name="UserAccount" package="moqui.security">
-    <field name="myPreference" type="text-medium"/>
-</extend-entity>
+    <!-- Extend Mantle's OrderHeader -->
+    <extend-entity entity-name="OrderHeader" package="mantle.order">
+        <field name="myCustomField" type="text-medium"/>
+        <field name="myTypeEnumId" type="id"/>
+        <relationship type="one" title="MyType" related="moqui.basic.Enumeration">
+            <key-map field-name="myTypeEnumId"/></relationship>
+        <index name="OH_MY_CUSTOM"><index-field name="myCustomField"/></index>
+        <seed-data>
+            <moqui.basic.EnumerationType enumTypeId="MyOrderType" description="My Order Type"/>
+            <moqui.basic.Enumeration enumId="MotStandard" enumTypeId="MyOrderType" description="Standard"/>
+        </seed-data>
+    </extend-entity>
+
+    <!-- Extend Mantle's OrderItem (same file since it's order domain) -->
+    <extend-entity entity-name="OrderItem" package="mantle.order">
+        <field name="customNotes" type="text-long"/>
+    </extend-entity>
+
+</entities>
+```
+
+```xml
+<!-- File: entity/SecurityExtendedEntities.xml -->
+<!-- Framework entity extensions go in their own domain file -->
+<entities xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/entity-definition-3.xsd">
+
+    <!-- Extend framework's UserAccount -->
+    <extend-entity entity-name="UserAccount" package="moqui.security">
+        <field name="myPreference" type="text-medium"/>
+    </extend-entity>
+
+</entities>
 ```
 
 ---
@@ -606,8 +711,5 @@ Common FK fields and where to find valid values:
 java -jar moqui.war load
 
 # Load specific types
-java -jar moqui.war load types=seed,seed-initial,install
-
-# Load from specific component
-java -jar moqui.war load types=seed component=MyComponent
+java -jar moqui.war load types=seed,seed-initial,install,demo
 ```

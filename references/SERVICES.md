@@ -1,5 +1,7 @@
 # Moqui Service Development Reference
 
+> **Schema**: Service XML must conform to `framework/xsd/service-definition-3.xsd`. Service ECA rules must conform to `framework/xsd/service-eca-3.xsd`. REST API definitions must conform to `framework/xsd/rest-api-3.xsd`. XML Actions blocks must conform to `framework/xsd/xml-actions-3.xsd`.
+
 ## Table of Contents
 1. [Service Definition](#service-definition)
 2. [Service Types](#service-types)
@@ -185,6 +187,29 @@ Service: mycomp.myapp.OrderServices.create#SalesOrder
 ---
 
 ## XML Actions Complete Reference
+
+> **CRITICAL — XSD Validation**: All XML Actions elements MUST conform to the Moqui XSD schema at `framework/xsd/xml-actions-3.xsd`. **Never invent element names.** Common mistakes:
+> - `<make-value>` ✗ → `<entity-make-value>` ✓
+> - `<sequenced-id-primary>` ✗ → `<entity-sequenced-id-primary>` ✓
+> - `<find-one>` ✗ → `<entity-find-one>` ✓
+> - `<find>` ✗ → `<entity-find>` ✓
+>
+> All entity operation elements are prefixed with `entity-`. When in doubt, check the XSD file or the element list below.
+
+### Valid XML Actions Element Names (from XSD)
+
+| Category | Elements |
+|----------|----------|
+| **Variables** | `set`, `script` |
+| **Control flow** | `if`, `else-if`, `else`, `iterate`, `while`, `return`, `message` |
+| **Entity read** | `entity-find-one`, `entity-find`, `entity-find-count`, `entity-find-related` |
+| **Entity write** | `entity-make-value`, `entity-create`, `entity-update`, `entity-delete`, `entity-delete-by-condition`, `entity-delete-related`, `entity-set` |
+| **Entity ID** | `entity-sequenced-id-primary`, `entity-sequenced-id-secondary` |
+| **Service** | `service-call` |
+| **Transaction** | `transaction` |
+| **Logging** | `log` |
+| **XML actions** | `actions` (nested block) |
+| **Order by** | `order-by` (inside entity-find) |
 
 ### Variables & Expressions
 
@@ -534,11 +559,21 @@ get#ProductPrice           — Calculate product price
 
 ## REST API Configuration
 
-### Service REST API (rest.xml in component)
+### Service REST API (.rest.xml in component)
+
+REST API resource files use the naming convention `{component-name}.rest.xml` and **must be placed directly in the `service/` directory** (NOT in a subdirectory). The framework only scans direct children of `service/` for `*.rest.xml` files — files in subdirectories will NOT be discovered.
+
+**File location**: `service/{component}.rest.xml` *(directly in service/, not in a subdirectory)*
+**Schema**: `framework/xsd/rest-api-3.xsd`
 
 ```xml
-<!-- File: service/rest.xml or screen/...rest.xml -->
-<resource name="myapi" description="My API" require-authentication="true">
+<!-- File: service/mycomp.rest.xml  ← MUST be directly in service/ folder -->
+<!-- General Guideline Verbs: GET=find, POST=create/do, PUT=store, PATCH=update, DELETE=delete -->
+<resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/rest-api-3.xsd"
+        name="mycomp" displayName="My Component REST API" version="1.0.0"
+        description="REST API for my component.">
+
     <resource name="orders">
         <method type="get">
             <service name="mycomp.myapp.OrderServices.find#Orders"/>
@@ -550,7 +585,7 @@ get#ProductPrice           — Calculate product price
             <method type="get">
                 <service name="mycomp.myapp.OrderServices.get#OrderDetail"/>
             </method>
-            <method type="put">
+            <method type="patch">
                 <service name="mycomp.myapp.OrderServices.update#Order"/>
             </method>
             <method type="delete">
@@ -569,8 +604,23 @@ get#ProductPrice           — Calculate product price
 </resource>
 ```
 
-Endpoint: `POST /rest/s1/myapi/orders` → calls `create#Order`
-Endpoint: `GET /rest/s1/myapi/orders/100123` → calls `get#OrderDetail` with orderId=100123
+The root `<resource name="...">` determines the base URL path: `/rest/s1/{name}/...`
+
+Endpoint: `POST /rest/s1/mycomp/orders` → calls `create#Order`
+Endpoint: `GET /rest/s1/mycomp/orders/100123` → calls `get#OrderDetail` with orderId=100123
+Endpoint: `GET /rest/s1/mycomp/orders/100123/items` → calls `get#OrderItems` with orderId=100123
+
+### REST Authentication Options
+
+The `require-authentication` attribute can be set on `<resource>` elements to control access:
+
+| Value | Meaning |
+|-------|---------|
+| `true` *(default)* | Requires authenticated user |
+| `anonymous-view` | Allows anonymous access for read (GET) operations |
+| `anonymous-all` | Allows anonymous access for all operations |
+
+Authentication can be inherited — set it on the root `<resource>` and override on specific nested resources as needed.
 
 ### Authentication for REST
 - API key in header: `Authorization: Bearer <api_key>`
