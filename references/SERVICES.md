@@ -260,6 +260,24 @@ Service: mycomp.myapp.OrderServices.create#SalesOrder
     <order-by field-name="-unitAmount"/>  <!-- DESC -->
 </entity-find>
 
+<!-- OPTIONAL FILTER CONDITIONS -->
+<!-- Use ignore-if-empty for simple equals conditions -->
+<econdition field-name="statusId" ignore-if-empty="true"/>
+
+<!-- PITFALL: For "like" operator with Groovy string interpolation, use ignore="!paramName" instead.
+     ignore-if-empty checks the INTERPOLATED value. When paramName is null:
+       value="%${paramName}%" evaluates to "%null%" which is NOT empty,
+       so ignore-if-empty="true" does NOT skip the condition.
+     This causes queries to fail with: WHERE field LIKE '%null%' -->
+
+<!-- WRONG — %${null}% = "%null%" is non-empty, condition is NOT skipped -->
+<econdition field-name="firstName" operator="like" value="%${firstName}%" ignore-if-empty="true"/>
+
+<!-- CORRECT — ignore="!firstName" checks the RAW parameter before interpolation -->
+<econdition field-name="firstName" operator="like" value="%${firstName}%" ignore="!firstName"/>
+<econdition field-name="lastName" operator="like" value="%${lastName}%" ignore="!lastName"/>
+<econdition field-name="email" operator="like" value="%${email}%" ignore="!email"/>
+
 <!-- COUNT -->
 <entity-find-count entity-name="mantle.order.OrderItem" count-field="itemCount">
     <econdition field-name="orderId"/>
